@@ -1,16 +1,32 @@
-// src/context/AuthContext.jsx
-import React, { createContext, useState, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 
-export const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  const loginUser = (userData) => {
-    setUser(userData);
+  const loginUser = async (credentials) => {
+    const res = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "Login failed");
+      return null;
+    }
+
+    localStorage.setItem("token", data.token);
+    setUser(data.user);
+
+    return data.user;
   };
 
   const logoutUser = () => {
+    localStorage.removeItem("token");
     setUser(null);
   };
 
@@ -21,7 +37,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook for easy usage
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
